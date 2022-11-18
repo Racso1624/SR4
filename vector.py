@@ -40,7 +40,12 @@ class V3(object):
         return(self.x ** 2 + self.y ** 2 + self.z ** 2) ** 0.5
 
     def norm(self):
-        return self * (1 / self.length())
+        return (self * (1 / self.length())) if (self.length() > 0) else V3(0, 0, 0)
+
+    def round_coords(self):
+        self.x = round(self.x)
+        self.y = round(self.y)
+        self.z = round(self.z)
 
     def __repr__(self):
         return "V3(%s, %s, %s)" % (self.x, self.y, self.z)

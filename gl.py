@@ -5,6 +5,7 @@
 
 import struct
 from obj import *
+from vector import *
 
 def char(c):
     #1 byte
@@ -21,6 +22,53 @@ def dword(l):
 def setColor(r, b, g):
     return bytes([int(b * 255), int(g * 255), int(r * 255)])
 
+def bounding_box(A, B, C):
+
+    coords = [(A.x, A.y), (B.x, B.y), (C.x, C.y)]
+
+    x_min = 999999
+    x_max = -999999
+    y_min = 999999
+    y_max = -999999
+
+    for(x, y) in coords:
+
+        if x < x_min:
+            x_min = x
+        if x > x_max:
+            x_max = x
+        if y < y_min:
+            y_min = y
+        if y > y_max:
+            y_max = y
+
+    return V3(x_min, y_min), V3(x_max, y_max)
+
+def cross(v1, v2):
+    return (
+        v1.y * v2.z - v1.z * v2.y,
+        v1.z * v2.x - v1.x * v2.z,
+        v1.x * v2.y - v1.y * v2.x
+    )
+
+def barycentric(A, B, C, P):
+
+    cx, cy, cz = cross(
+        V3(B.x - A.x, C.x - A.x, A.x - P.x),
+        V3(B.y - A.y, C.y - A.y, A.y - P.y)
+    )
+
+    if cz == 0:
+        return(-1, -1, -1)
+
+    u = cx / cz
+    v = cy / cz
+    w = 1 - (u + v)
+
+    return(w, v, u)
+        
+
+
 class Render(object):
 
     def __init__(self):
@@ -33,6 +81,7 @@ class Render(object):
         self.viewport_y = 0
         self.viewport_height = 0
         self.viewport_width = 0
+        self.texture = None
 
     def glClear(self):
         self.framebuffer = [[self.clear_color for x in range(self.width)]
@@ -164,6 +213,38 @@ class Render(object):
                 self.glLine(v1[0], v2[0], v1[1], v2[1])
                 self.glLine(v2[0], v3[0], v2[1], v3[1])
                 self.glLine(v3[0], v1[0], v3[1], v1[1])
+
+    def lightPosition(self, x:int, y:int, z:int):
+        self.light = V3(x, y, z)
+
+    def triangleBarycenter(self, vertices, t_vertices=()):
+        
+        A, B, C = vertices
+        
+        if self.texture:
+            t_A, t_B, t_C = t_vertices
+
+        light = self.light
+        normal = (B - A) * (C - A)
+
+        i = normal.norm() @ light.norm()
+
+        if i < 0:
+            return
+
+        self.clear_color = setColor(round(255 * i), round(255 * i), round(255 * i))
+
+        min, max = bounding_box(A, B, C)
+        min.round_coords()
+        max.round_coords()
+
+        for x in range(min.x, max.x + 1):
+            for y in range(min.y, max.y + 1):
+                w, v, u = barycentric(A, B, C, V3(x, y))
+
+                if(w < 0 or v < 0 or u < 0):
+                    continue
+
 
     def glFinish(self, filename):
         f = open(filename, 'bw')
