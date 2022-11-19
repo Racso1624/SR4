@@ -20,7 +20,7 @@ class V3(object):
         )
 
     def __mul__(self, other):
-        if (type(other) == int or type(other == float)):
+        if (type(other) == int or type(other) == float):
             return V3(
                 self.x * other,
                 self.y * other,
@@ -40,7 +40,11 @@ class V3(object):
         return(self.x ** 2 + self.y ** 2 + self.z ** 2) ** 0.5
 
     def norm(self):
-        return (self * (1 / self.length())) if (self.length() > 0) else V3(0, 0, 0)
+        try:
+            return self * (1 / self.length())
+
+        except:
+            return V3(-1,-1,-1)
 
     def round_coords(self):
         self.x = round(self.x)

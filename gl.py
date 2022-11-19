@@ -87,6 +87,11 @@ class Render(object):
         self.framebuffer = [[self.clear_color for x in range(self.width)]
         for y in range(self.height)]
 
+        self.zBuffer = [
+            [-9999 for x in range(self.width)]
+            for y in range(self.height)
+        ]
+
     def glCreateWindow(self, width, height):
         self.width = width
         self.height = height
@@ -173,10 +178,11 @@ class Render(object):
                 threshold += dx * 2
 
     def transform_vertex(self, vertex, translate, scale):
-        return([
-            (vertex[0] * scale[0]) + translate[0],
-            (vertex[1] * scale[1]) + translate[1]
-        ])
+        return V3(
+            round((vertex[0] * scale[0]) + translate[0]),
+            round((vertex[1] * scale[1]) + translate[1]),
+            round((vertex[2] * scale[2]) + translate[2])
+        )
 
     def load(self, filename, translate, scale):
         model = Obj(filename)
@@ -196,10 +202,13 @@ class Render(object):
                 v3 = self.transform_vertex(model.vertices[f3], translate, scale)
                 v4 = self.transform_vertex(model.vertices[f4], translate, scale)
 
-                self.glLine(v1[0], v2[0], v1[1], v2[1])
-                self.glLine(v2[0], v3[0], v2[1], v3[1])
-                self.glLine(v3[0], v4[0], v3[1], v4[1])
-                self.glLine(v4[0], v1[0], v4[1], v1[1])
+                # self.glLine(v1[0], v2[0], v1[1], v2[1])
+                # self.glLine(v2[0], v3[0], v2[1], v3[1])
+                # self.glLine(v3[0], v4[0], v3[1], v4[1])
+                # self.glLine(v4[0], v1[0], v4[1], v1[1])
+
+                self.triangle(v1, v2, v4)
+                self.triangle(v2, v3, v4)
             
             elif vcount == 3:
                 f1 = face[0][0] - 1
@@ -210,29 +219,23 @@ class Render(object):
                 v2 = self.transform_vertex(model.vertices[f2], translate, scale)
                 v3 = self.transform_vertex(model.vertices[f3], translate, scale)
 
-                self.glLine(v1[0], v2[0], v1[1], v2[1])
-                self.glLine(v2[0], v3[0], v2[1], v3[1])
-                self.glLine(v3[0], v1[0], v3[1], v1[1])
+                # self.glLine(v1[0], v2[0], v1[1], v2[1])
+                # self.glLine(v2[0], v3[0], v2[1], v3[1])
+                # self.glLine(v3[0], v1[0], v3[1], v1[1])
 
-    def lightPosition(self, x:int, y:int, z:int):
-        self.light = V3(x, y, z)
+                print(v1)
 
-    def triangleBarycenter(self, vertices, t_vertices=()):
-        
-        A, B, C = vertices
-        
-        if self.texture:
-            t_A, t_B, t_C = t_vertices
+                self.triangle(v1, v2, v3)
 
-        light = self.light
+    def triangle(self, A, B, C):
+
+        light = V3(0, 0, -1)
         normal = (B - A) * (C - A)
 
         i = normal.norm() @ light.norm()
 
         if i < 0:
             return
-
-        self.clear_color = setColor(round(255 * i), round(255 * i), round(255 * i))
 
         min, max = bounding_box(A, B, C)
         min.round_coords()
@@ -244,6 +247,12 @@ class Render(object):
 
                 if(w < 0 or v < 0 or u < 0):
                     continue
+                
+                z = A.z * w + B.z * v + C.z * u
+
+                if(self.zBuffer[x][y] < z):
+                    self.zBuffer[x][y] = z
+                    self.glPoint(x, y)
 
 
     def glFinish(self, filename):
