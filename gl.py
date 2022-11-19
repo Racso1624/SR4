@@ -202,11 +202,6 @@ class Render(object):
                 v3 = self.transform_vertex(model.vertices[f3], translate, scale)
                 v4 = self.transform_vertex(model.vertices[f4], translate, scale)
 
-                # self.glLine(v1[0], v2[0], v1[1], v2[1])
-                # self.glLine(v2[0], v3[0], v2[1], v3[1])
-                # self.glLine(v3[0], v4[0], v3[1], v4[1])
-                # self.glLine(v4[0], v1[0], v4[1], v1[1])
-
                 self.triangle(v1, v2, v4)
                 self.triangle(v2, v3, v4)
             
@@ -219,15 +214,9 @@ class Render(object):
                 v2 = self.transform_vertex(model.vertices[f2], translate, scale)
                 v3 = self.transform_vertex(model.vertices[f3], translate, scale)
 
-                # self.glLine(v1[0], v2[0], v1[1], v2[1])
-                # self.glLine(v2[0], v3[0], v2[1], v3[1])
-                # self.glLine(v3[0], v1[0], v3[1], v1[1])
-
-                print(v1)
-
                 self.triangle(v1, v2, v3)
 
-    def triangle(self, A, B, C):
+    def triangle(self, A, B, C, color = None):
 
         light = V3(0, 0, -1)
         normal = (B - A) * (C - A)
@@ -236,6 +225,10 @@ class Render(object):
 
         if i < 0:
             return
+
+        color_tex = 1 * i
+
+        self.render_color = setColor(color_tex, color_tex, color_tex)
 
         min, max = bounding_box(A, B, C)
         min.round_coords()
