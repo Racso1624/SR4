@@ -218,7 +218,7 @@ class Render(object):
 
     def triangle(self, A, B, C, color = None):
 
-        light = V3(0, 0, -1)
+        light = V3(-1, 1, -1)
         normal = (B - A) * (C - A)
 
         i = normal.norm() @ light.norm()
